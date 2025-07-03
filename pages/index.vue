@@ -17,8 +17,8 @@
 
 <script>
 export default {
-    async asyncData({ $fetch }) {
-        const courses = await $fetch('/api/courses');
+    async asyncData({ $fetch, $config }) {
+        const courses = await $fetch(`${$config.public.apiBase}/api/courses`);
         return { courses };
     },
 };

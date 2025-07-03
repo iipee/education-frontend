@@ -20,7 +20,7 @@ export default {
     },
     methods: {
         async register() {
-            await $fetch('/api/register', { method: 'POST', body: this.form });
+            await $fetch(`${$config.public.apiBase}/api/register`, { method: 'POST', body: this.form });
             this.$router.push('/');
         },
     },

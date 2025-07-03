@@ -12,7 +12,8 @@ export default {
         return { messages: [], newMessage: '', socket: null };
     },
     mounted() {
-        this.socket = new WebSocket('ws://localhost:8080/ws');
+        const wsUrl = `${$config.public.apiBase.replace('http', 'ws').replace('https', 'wss')}/ws`;
+        this.socket = new WebSocket(wsUrl);
         this.socket.onmessage = (event) => this.messages.push({ id: Date.now(), text: event.data });
     },
     methods: { sendMessage() { if (this.newMessage) { this.socket.send(this.newMessage); this.newMessage = ''; } } },
