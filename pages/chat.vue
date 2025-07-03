@@ -1,22 +1,48 @@
 <template>
     <v-container>
-        <h1>Чат</h1>
-        <div v-for="message in messages" :key="message.id">{{ message.text }}</div>
-        <v-text-field v-model="newMessage" @keyup.enter="sendMessage" placeholder="Введите сообщение"></v-text-field>
+        <v-row>
+            <v-col>
+                <h1>Чат</h1>
+                <v-text-field v-model="message" label="Сообщение" @keyup.enter="sendMessage"></v-text-field>
+                <v-list>
+                    <v-list-item v-for="(msg, index) in messages" :key="index">{{ msg }}</v-list-item>
+                </v-list>
+            </v-col>
+        </v-row>
     </v-container>
 </template>
 
 <script>
 export default {
+    middleware: ['auth'],
     data() {
-        return { messages: [], newMessage: '', socket: null };
+        return {
+            message: '',
+            messages: [],
+            ws: null,
+        };
     },
     mounted() {
-        const wsUrl = `${$config.public.apiBase.replace('http', 'ws').replace('https', 'wss')}/ws`;
-        this.socket = new WebSocket(wsUrl);
-        this.socket.onmessage = (event) => this.messages.push({ id: Date.now(), text: event.data });
+        if (process.client) {
+            this.ws = new WebSocket(`${$config.public.apiBase.replace('http', 'ws')}/ws`);
+            this.ws.onmessage = (event) => {
+                this.messages.push(event.data);
+            };
+            this.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+        }
     },
-    methods: { sendMessage() { if (this.newMessage) { this.socket.send(this.newMessage); this.newMessage = ''; } } },
-    beforeDestroy() { this.socket.close(); },
+    methods: {
+        sendMessage() {
+            if (this.message && this.ws) {
+                this.ws.send(this.message);
+                this.message = '';
+            }
+        },
+    },
+    beforeDestroy() {
+        if (this.ws) this.ws.close();
+    },
 };
 </script>
