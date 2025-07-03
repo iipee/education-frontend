@@ -1,0 +1,9 @@
+.v-application {
+    background-color: #f0f0f0;
+}
+.logo {
+    content: url('/assets/client-logo.png');
+}
+.v-btn--primary {
+    background-color: #1E90FF;
+}
