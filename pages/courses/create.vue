@@ -1,45 +1,69 @@
 <template>
-    <v-container>
-        <v-row>
-            <v-col cols="12" sm="6">
-                <v-form ref="form" @submit.prevent="createCourse">
-                    <v-text-field v-model="form.title" label="Название курса" required></v-text-field>
-                    <v-textarea v-model="form.description" label="Описание" required></v-textarea>
-                    <v-text-field v-model="form.video_url" label="URL видео" required></v-text-field>
-                    <v-text-field v-model="form.teacher_id" label="ID учителя" type="number" required></v-text-field>
-                    <v-btn type="submit" color="primary">Создать курс</v-btn>
-                </v-form>
-            </v-col>
-        </v-row>
-    </v-container>
+  <v-container>
+    <v-row justify="center">
+      <v-col cols="12" sm="8" md="6">
+        <v-card class="pa-6">
+          <v-card-title class="justify-center">
+            <h2>Создать услугу</h2>
+          </v-card-title>
+          <v-card-text>
+            <v-form v-model="valid" @submit.prevent="createService">
+              <v-text-field
+                v-model="form.title"
+                label="Название услуги"
+                prepend-icon="mdi-food-apple"
+                :rules="[v => !!v || 'Название обязательно']"
+                required
+              />
+              <v-textarea
+                v-model="form.description"
+                label="Описание услуги"
+                prepend-icon="mdi-information"
+                :rules="[v => !!v || 'Описание обязательно']"
+                required
+              />
+              <v-text-field
+                v-model="form.price"
+                label="Стоимость (руб.)"
+                prepend-icon="mdi-currency-rub"
+                type="number"
+                :rules="[v => !!v || 'Стоимость обязательна', v => v > 0 || 'Стоимость должна быть больше 0']"
+                required
+              />
+              <v-btn
+                color="primary"
+                type="submit"
+                :disabled="!valid"
+                block
+                class="mt-4"
+              >
+                Создать услугу
+              </v-btn>
+            </v-form>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
-<script>
-export default {
-    middleware: ['auth'],
-    data() {
-        return { form: { title: '', description: '', video_url: '', teacher_id: 0 } };
-    },
-    methods: {
-        async createCourse() {
-            if (!this.form.title || !this.form.description || !this.form.video_url || !this.form.teacher_id) {
-                this.showNotification('Введите все необходимые данные', 'error');
-                return;
-            }
-            const response = await $fetch(`${$config.public.apiBase}/api/courses`, {
-                method: 'POST',
-                body: this.form,
-            });
-            if (response) {
-                this.showNotification('Курс создан!', 'success');
-                this.$router.push('/');
-            } else {
-                this.showNotification('Ошибка создания', 'error');
-            }
-        },
-        showNotification(text, color = 'success') {
-            this.$emit('notification', { text, color });
-        },
-    },
+<script setup>
+definePageMeta({ middleware: 'auth' });
+
+const valid = ref(false);
+const form = ref({
+  title: '',
+  description: '',
+  price: 0
+});
+
+const createService = () => {
+  if (valid.value) {
+    console.log('Услуга создана:', form.value);
+    useNuxtApp().$mitt.emit('notification', { text: 'Услуга создана!', color: 'success' });
+    useRouter().push('/profile');
+  } else {
+    useNuxtApp().$mitt.emit('notification', { text: 'Заполните все поля', color: 'error' });
+  }
 };
 </script>

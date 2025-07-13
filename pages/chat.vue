@@ -1,48 +1,58 @@
 <template>
-    <v-container>
-        <v-row>
-            <v-col>
-                <h1>Чат</h1>
-                <v-text-field v-model="message" label="Сообщение" @keyup.enter="sendMessage"></v-text-field>
-                <v-list>
-                    <v-list-item v-for="(msg, index) in messages" :key="index">{{ msg }}</v-list-item>
-                </v-list>
-            </v-col>
-        </v-row>
-    </v-container>
+  <v-container>
+    <v-row justify="center">
+      <v-col cols="12" sm="8" md="6">
+        <v-card class="pa-6">
+          <v-card-title class="justify-center">
+            <h2>Чат с нутрициологом</h2>
+          </v-card-title>
+          <v-card-text>
+            <v-list>
+              <v-list-item v-for="(message, index) in messages" :key="index">
+                <v-list-item-content>
+                  <v-list-item-title>{{ message.text }}</v-list-item-title>
+                  <v-list-item-subtitle>{{ message.author }} ({{ message.time }})</v-list-item-subtitle>
+                </v-list-item-content>
+              </v-list-item>
+            </v-list>
+            <v-text-field
+              v-model="newMessage"
+              label="Введите сообщение"
+              prepend-icon="mdi-message"
+              clearable
+              @keyup.enter="sendMessage"
+            />
+            <v-btn color="primary" block @click="sendMessage">Отправить</v-btn>
+          </v-card-text>
+        </v-card>
+      </v-col>
+    </v-row>
+  </v-container>
 </template>
 
 <script>
 export default {
-    middleware: ['auth'],
-    data() {
-        return {
-            message: '',
-            messages: [],
-            ws: null,
-        };
-    },
-    mounted() {
-        if (process.client) {
-            this.ws = new WebSocket(`${$config.public.apiBase.replace('http', 'ws')}/ws`);
-            this.ws.onmessage = (event) => {
-                this.messages.push(event.data);
-            };
-            this.ws.onerror = (error) => {
-                console.error('WebSocket error:', error);
-            };
-        }
-    },
-    methods: {
-        sendMessage() {
-            if (this.message && this.ws) {
-                this.ws.send(this.message);
-                this.message = '';
-            }
-        },
-    },
-    beforeDestroy() {
-        if (this.ws) this.ws.close();
-    },
-};
+  data() {
+    return {
+      newMessage: '',
+      messages: [
+        { text: 'Здравствуйте! Хочу обсудить план питания.', author: 'Клиент', time: '10:00' },
+        { text: 'Добрый день! Давайте начнем с ваших целей.', author: 'Нутрициолог', time: '10:05' }
+      ]
+    }
+  },
+  methods: {
+    sendMessage() {
+      if (this.newMessage) {
+        this.messages.push({
+          text: this.newMessage,
+          author: 'Клиент',
+          time: new Date().toLocaleTimeString()
+        })
+        this.newMessage = ''
+        console.log('Сообщение отправлено:', this.newMessage)
+      }
+    }
+  }
+}
 </script>

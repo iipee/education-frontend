@@ -4,17 +4,10 @@
       <v-col cols="12" sm="8" md="6">
         <v-card class="pa-6">
           <v-card-title class="justify-center">
-            <h2>Регистрация</h2>
+            <h2>Вход</h2>
           </v-card-title>
           <v-card-text>
-            <v-form v-model="valid" @submit.prevent="register">
-              <v-text-field
-                v-model="form.name"
-                label="Имя"
-                prepend-icon="mdi-account"
-                :rules="[v => !!v || 'Имя обязательно']"
-                required
-              />
+            <v-form v-model="valid" @submit.prevent="login">
               <v-text-field
                 v-model="form.email"
                 label="Email"
@@ -30,21 +23,6 @@
                 :rules="[v => !!v || 'Пароль обязателен', v => v.length >= 6 || 'Пароль должен быть не менее 6 символов']"
                 required
               />
-              <v-select
-                v-model="form.role"
-                :items="roles"
-                label="Роль"
-                prepend-icon="mdi-account-group"
-                :rules="[v => !!v || 'Роль обязательна']"
-                required
-              />
-              <v-textarea
-                v-if="form.role === 'Нутрициолог'"
-                v-model="form.description"
-                label="Описание услуг"
-                prepend-icon="mdi-information"
-                :rules="[v => !!v || 'Описание обязательно']"
-              />
               <v-btn
                 color="primary"
                 type="submit"
@@ -52,7 +30,7 @@
                 block
                 class="mt-4"
               >
-                Зарегистрироваться
+                Войти
               </v-btn>
             </v-form>
           </v-card-text>
@@ -68,19 +46,15 @@ export default {
     return {
       valid: false,
       form: {
-        name: '',
         email: '',
-        password: '',
-        role: '',
-        description: ''
-      },
-      roles: ['Клиент', 'Нутрициолог']
+        password: ''
+      }
     }
   },
   methods: {
-    register() {
-      console.log('Регистрация:', this.form)
-      // Пример: this.$axios.post('/api/register', this.form).then(response => { ... })
+    login() {
+      console.log('Вход:', this.form)
+      // Пример: this.$axios.post('/api/login', this.form).then(response => { ... })
     }
   }
 }
