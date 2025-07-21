@@ -26,17 +26,23 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRuntimeConfig } from 'nuxt/app'
 
 const config = useRuntimeConfig()
 const searchQuery = ref('')
 const nutritionists = ref([])
-const token = localStorage.getItem('token')
+const token = ref(null)
+
+onMounted(() => {
+  if (process.client) {
+    token.value = localStorage.getItem('token')
+  }
+})
 
 const search = async () => {
   const { data } = await useFetch(`${config.public.apiBase}/api/search?q=${searchQuery.value}`, {
-    headers: { Authorization: token }
+    headers: { Authorization: token.value }
   })
   nutritionists.value = data.value
 }

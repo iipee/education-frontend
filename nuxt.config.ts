@@ -47,5 +47,16 @@ export default defineNuxtConfig({
     }
   },
   plugins: ['~/plugins/auth.ts'],
-  components: true
+  components: true,
+  vite: {
+    server: {
+      proxy: {
+        '/api': {
+          target: process.env.API_BASE_URL || 'http://localhost:8080',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '')
+        }
+      }
+    }
+  }
 })

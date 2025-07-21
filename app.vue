@@ -4,20 +4,13 @@
     <v-main>
       <NuxtPage />
     </v-main>
-    <v-footer app>
-      © 2025 Платформа для нутрициологов
+    <v-footer app color="primary" dark class="text-center">
+      <v-col cols="12">
+        Платформа для нутрициологов 2025
+      </v-col>
     </v-footer>
   </v-app>
 </template>
 
 <script setup>
-import { onMounted } from 'vue'
-import { useNuxtApp } from 'nuxt/app'
-
-const { $vuetify } = useNuxtApp()
-
-onMounted(() => {
-  const savedTheme = localStorage.getItem('theme')
-  $vuetify.theme.global.name = savedTheme || 'light'
-})
 </script>

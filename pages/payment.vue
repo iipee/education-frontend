@@ -17,6 +17,7 @@
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useRuntimeConfig } from 'nuxt/app'
 
@@ -24,7 +25,13 @@ const config = useRuntimeConfig()
 const route = useRoute()
 const orderId = route.query.order_id
 const amount = route.query.amount
-const token = localStorage.getItem('token')
+const token = ref(null)
+
+onMounted(() => {
+  if (process.client) {
+    token.value = localStorage.getItem('token')
+  }
+})
 
 const pay = () => {
   console.log("Тест оплаты прошел успешно для заказа", orderId, "на сумму", amount)

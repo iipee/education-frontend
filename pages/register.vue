@@ -45,6 +45,12 @@
                 prepend-icon="mdi-information"
                 :rules="[v => !!v || 'Описание обязательно']"
               />
+              <v-text-field
+                v-if="form.role === 'nutritionist'"
+                v-model="servicesInput"
+                label="Услуги (через запятую)"
+                prepend-icon="mdi-format-list-bulleted"
+              />
               <v-btn
                 color="primary"
                 type="submit"
@@ -70,16 +76,21 @@ import { useRuntimeConfig } from 'nuxt/app'
 const config = useRuntimeConfig()
 const router = useRouter()
 const valid = ref(false)
+const servicesInput = ref('')
 const form = ref({
   username: '',
   email: '',
   password: '',
   role: '',
-  description: ''
+  description: '',
+  services: []
 })
 const roles = [{value: 'client', title: 'Клиент'}, {value: 'nutritionist', title: 'Нутрициолог'}]
 
 const register = async () => {
+  if (servicesInput.value) {
+    form.value.services = servicesInput.value.split(',').map(s => s.trim())
+  }
   const { data, error } = await useFetch(`${config.public.apiBase}/api/register`, {
     method: 'POST',
     body: form.value
@@ -88,8 +99,10 @@ const register = async () => {
     console.error('Registration error:', error.value)
     return
   }
-  localStorage.setItem('token', data.value.token)
-  localStorage.setItem('role', form.value.role)
+  if (process.client) {
+    localStorage.setItem('token', data.value.token)
+    localStorage.setItem('role', form.value.role)
+  }
   router.push('/profile')
 }
 </script>

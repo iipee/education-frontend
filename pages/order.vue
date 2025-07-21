@@ -33,11 +33,14 @@ import { useRouter } from 'vue-router'
 const config = useRuntimeConfig()
 const router = useRouter()
 const courses = ref([])
-const token = localStorage.getItem('token')
+const token = ref(null)
 
 onMounted(async () => {
+  if (process.client) {
+    token.value = localStorage.getItem('token')
+  }
   const { data } = await useFetch(`${config.public.apiBase}/api/courses`, {
-    headers: { Authorization: token }
+    headers: { Authorization: token.value }
   })
   courses.value = data.value
 })
@@ -45,7 +48,7 @@ onMounted(async () => {
 const orderCourse = async (course) => {
   const { data } = await useFetch(`${config.public.apiBase}/api/orders`, {
     method: 'POST',
-    headers: { Authorization: token },
+    headers: { Authorization: token.value },
     body: {
       nutritionist_id: course.teacher_id,
       course_id: course.id,
