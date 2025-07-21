@@ -30,29 +30,23 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      newMessage: '',
-      messages: [
-        { text: 'Здравствуйте! Хочу обсудить план питания.', author: 'Клиент', time: '10:00' },
-        { text: 'Добрый день! Давайте начнем с ваших целей.', author: 'Нутрициолог', time: '10:05' }
-      ]
-    }
-  },
-  methods: {
-    sendMessage() {
-      if (this.newMessage) {
-        this.messages.push({
-          text: this.newMessage,
-          author: 'Клиент',
-          time: new Date().toLocaleTimeString()
-        })
-        this.newMessage = ''
-        console.log('Сообщение отправлено:', this.newMessage)
-      }
-    }
+<script setup>
+import { ref } from 'vue'
+
+const newMessage = ref('')
+const messages = ref([
+  { text: 'Здравствуйте! Хочу обсудить план питания.', author: 'Клиент', time: '10:00' },
+  { text: 'Добрый день! Давайте начнем с ваших целей.', author: 'Нутрициолог', time: '10:05' }
+])
+
+const sendMessage = () => {
+  if (newMessage.value) {
+    messages.value.push({
+      text: newMessage.value,
+      author: 'Клиент',
+      time: new Date().toLocaleTimeString()
+    })
+    newMessage.value = ''
   }
 }
 </script>

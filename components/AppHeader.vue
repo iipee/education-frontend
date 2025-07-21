@@ -5,23 +5,44 @@
       Платформа для нутрициологов
     </v-toolbar-title>
     <v-spacer />
-    <v-btn icon @click="isDark = !isDark">
+    <v-btn icon @click="toggleTheme">
       <v-icon>mdi-{{ $vuetify.theme.dark ? 'white-balance-sunny' : 'moon-waxing-crescent' }}</v-icon>
     </v-btn>
-    <v-btn text to="/courses/create">Создать услугу</v-btn>
-    <v-btn text to="/register">Регистрация</v-btn>
-    <v-btn text to="/login">Войти</v-btn>
+    <v-btn v-if="isLoggedIn && role === 'nutritionist'" text to="/courses/create">Создать услугу</v-btn>
+    <v-btn v-if="!isLoggedIn" text to="/login">Войти</v-btn>
+    <v-btn v-if="isLoggedIn" text @click="logout">Выйти</v-btn>
   </v-app-bar>
 </template>
 
 <script setup>
-const { $vuetify } = useNuxtApp();
-const isDark = ref($vuetify.theme.global.name.value === 'dark');
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useNuxtApp } from 'nuxt/app'
 
-watch(isDark, (newValue) => {
-  $vuetify.theme.global.name.value = newValue ? 'dark' : 'light';
-  if (process.client) {
-    localStorage.setItem('theme', newValue ? 'dark' : 'light');
-  }
-});
+const { $vuetify } = useNuxtApp()
+const router = useRouter()
+const isDark = ref(false)
+const token = localStorage.getItem('token')
+const isLoggedIn = ref(!!token)
+const role = ref(localStorage.getItem('role') || '')
+
+onMounted(() => {
+  const savedTheme = localStorage.getItem('theme')
+  isDark.value = savedTheme === 'dark'
+  $vuetify.theme.global.name = isDark.value ? 'dark' : 'light'
+})
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  $vuetify.theme.global.name = isDark.value ? 'dark' : 'light'
+  localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
+}
+
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  isLoggedIn.value = false
+  role.value = ''
+  router.push('/login')
+}
 </script>

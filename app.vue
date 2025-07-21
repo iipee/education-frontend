@@ -1,35 +1,23 @@
 <template>
   <v-app>
-    <app-header />
+    <AppHeader />
     <v-main>
       <NuxtPage />
     </v-main>
-    <v-footer app color="primary" dark>
-      <v-row justify="center" class="py-4">
-        <v-col cols="12" class="text-center">
-          © 2025 Платформа для нутрициологов
-        </v-col>
-      </v-row>
+    <v-footer app>
+      © 2025 Платформа для нутрициологов
     </v-footer>
   </v-app>
 </template>
 
 <script setup>
-const { $vuetify } = useNuxtApp()
-const isDark = ref($vuetify.theme.global.name.value === 'dark')
+import { onMounted } from 'vue'
+import { useNuxtApp } from 'nuxt/app'
 
-watch(isDark, (newValue) => {
-  $vuetify.theme.global.name.value = newValue ? 'dark' : 'light'
-  if (process.client) {
-    localStorage.setItem('theme', newValue ? 'dark' : 'light')
-  }
-})
+const { $vuetify } = useNuxtApp()
 
 onMounted(() => {
-  if (process.client) {
-    const savedTheme = localStorage.getItem('theme')
-    isDark.value = savedTheme === 'dark'
-    $vuetify.theme.global.name.value = isDark.value ? 'dark' : 'light'
-  }
+  const savedTheme = localStorage.getItem('theme')
+  $vuetify.theme.global.name = savedTheme || 'light'
 })
 </script>

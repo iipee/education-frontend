@@ -9,8 +9,8 @@
           <v-card-text>
             <v-form v-model="valid" @submit.prevent="register">
               <v-text-field
-                v-model="form.name"
-                label="Имя"
+                v-model="form.username"
+                label="Имя пользователя"
                 prepend-icon="mdi-account"
                 :rules="[v => !!v || 'Имя обязательно']"
                 required
@@ -39,7 +39,7 @@
                 required
               />
               <v-textarea
-                v-if="form.role === 'Нутрициолог'"
+                v-if="form.role === 'nutritionist'"
                 v-model="form.description"
                 label="Описание услуг"
                 prepend-icon="mdi-information"
@@ -62,26 +62,34 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      valid: false,
-      form: {
-        name: '',
-        email: '',
-        password: '',
-        role: '',
-        description: ''
-      },
-      roles: ['Клиент', 'Нутрициолог']
-    }
-  },
-  methods: {
-    register() {
-      console.log('Регистрация:', this.form)
-      // Пример: this.$axios.post('/api/register', this.form).then(response => { ... })
-    }
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRuntimeConfig } from 'nuxt/app'
+
+const config = useRuntimeConfig()
+const router = useRouter()
+const valid = ref(false)
+const form = ref({
+  username: '',
+  email: '',
+  password: '',
+  role: '',
+  description: ''
+})
+const roles = [{value: 'client', title: 'Клиент'}, {value: 'nutritionist', title: 'Нутрициолог'}]
+
+const register = async () => {
+  const { data, error } = await useFetch(`${config.public.apiBase}/api/register`, {
+    method: 'POST',
+    body: form.value
+  })
+  if (error.value) {
+    console.error('Registration error:', error.value)
+    return
   }
+  localStorage.setItem('token', data.value.token)
+  localStorage.setItem('role', form.value.role)
+  router.push('/profile')
 }
 </script>

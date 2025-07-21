@@ -1,21 +1,30 @@
 @import '@mdi/font/css/materialdesignicons.min.css';
 
 .v-application {
-    background-color: #f0f0f0;
+    background-color: #f4f6f9;
 }
 .logo {
-    background-color: #1976D2;
+    background-color: #4CAF50;
     width: 40px;
     height: 40px;
     display: inline-block;
+    border-radius: 50%;
 }
 .v-btn--primary {
-    background-color: #1E90FF;
+    background-color: #4CAF50;
+    border-radius: 8px;
 }
 .v-card {
     transition: all 0.3s;
+    border-radius: 12px;
 }
 .v-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+.text-h4 {
+    color: #2E7D32;
+}
+.text-subtitle-1 {
+    color: #616161;
 }

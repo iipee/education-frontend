@@ -9,10 +9,10 @@
           <v-card-text>
             <v-form v-model="valid" @submit.prevent="login">
               <v-text-field
-                v-model="form.email"
-                label="Email"
-                prepend-icon="mdi-email"
-                :rules="[v => !!v || 'Email обязателен', v => /.+@.+\..+/.test(v) || 'Некорректный email']"
+                v-model="form.username"
+                label="Имя пользователя"
+                prepend-icon="mdi-account"
+                :rules="[v => !!v || 'Имя обязательно']"
                 required
               />
               <v-text-field
@@ -33,6 +33,7 @@
                 Войти
               </v-btn>
             </v-form>
+            <p class="mt-4 text-center">Нет профиля? <NuxtLink to="/register">Создать профиль</NuxtLink></p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -40,22 +41,30 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      valid: false,
-      form: {
-        email: '',
-        password: ''
-      }
-    }
-  },
-  methods: {
-    login() {
-      console.log('Вход:', this.form)
-      // Пример: this.$axios.post('/api/login', this.form).then(response => { ... })
-    }
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRuntimeConfig } from 'nuxt/app'
+
+const config = useRuntimeConfig()
+const router = useRouter()
+const valid = ref(false)
+const form = ref({
+  username: '',
+  password: ''
+})
+
+const login = async () => {
+  const { data, error } = await useFetch(`${config.public.apiBase}/api/login`, {
+    method: 'POST',
+    body: form.value
+  })
+  if (error.value) {
+    console.error('Login error:', error.value)
+    return
   }
+  localStorage.setItem('token', data.value.token)
+  localStorage.setItem('role', data.value.role)
+  router.push('/profile')
 }
 </script>

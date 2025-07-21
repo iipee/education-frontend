@@ -14,7 +14,7 @@
     <v-row>
       <v-col v-for="(nutritionist, index) in nutritionists" :key="index" cols="12" sm="6" md="4">
         <v-card class="pa-4">
-          <v-card-title>{{ nutritionist.name }}</v-card-title>
+          <v-card-title>{{ nutritionist.username }}</v-card-title>
           <v-card-text>{{ nutritionist.description }}</v-card-text>
           <v-card-actions>
             <v-btn color="primary" :to="`/profile/${nutritionist.id}`">Посмотреть профиль</v-btn>
@@ -25,22 +25,19 @@
   </v-container>
 </template>
 
-<script>
-export default {
-  data() {
-    return {
-      searchQuery: '',
-      nutritionists: [
-        { id: 1, name: 'Иван Иванов', description: 'Составление планов питания.' },
-        { id: 2, name: 'Елена Петрова', description: 'Консультации по здоровому питанию.' }
-      ]
-    }
-  },
-  methods: {
-    search() {
-      console.log('Поиск:', this.searchQuery)
-      // Пример: this.$axios.get(`/api/search?q=${this.searchQuery}`).then(response => { ... })
-    }
-  }
+<script setup>
+import { ref } from 'vue'
+import { useRuntimeConfig } from 'nuxt/app'
+
+const config = useRuntimeConfig()
+const searchQuery = ref('')
+const nutritionists = ref([])
+const token = localStorage.getItem('token')
+
+const search = async () => {
+  const { data } = await useFetch(`${config.public.apiBase}/api/search?q=${searchQuery.value}`, {
+    headers: { Authorization: token }
+  })
+  nutritionists.value = data.value
 }
 </script>

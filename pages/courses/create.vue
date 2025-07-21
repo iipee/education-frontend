@@ -30,6 +30,11 @@
                 :rules="[v => !!v || 'Стоимость обязательна', v => v > 0 || 'Стоимость должна быть больше 0']"
                 required
               />
+              <v-text-field
+                v-model="form.video_url"
+                label="URL видео"
+                prepend-icon="mdi-video"
+              />
               <v-btn
                 color="primary"
                 type="submit"
@@ -48,22 +53,33 @@
 </template>
 
 <script setup>
-definePageMeta({ middleware: 'auth' });
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useRuntimeConfig } from 'nuxt/app'
 
-const valid = ref(false);
+definePageMeta({ middleware: 'auth' })
+
+const config = useRuntimeConfig()
+const router = useRouter()
+const valid = ref(false)
 const form = ref({
   title: '',
   description: '',
-  price: 0
-});
+  price: 0,
+  video_url: ''
+})
+const token = localStorage.getItem('token')
 
-const createService = () => {
-  if (valid.value) {
-    console.log('Услуга создана:', form.value);
-    useNuxtApp().$mitt.emit('notification', { text: 'Услуга создана!', color: 'success' });
-    useRouter().push('/profile');
-  } else {
-    useNuxtApp().$mitt.emit('notification', { text: 'Заполните все поля', color: 'error' });
+const createService = async () => {
+  const { data, error } = await useFetch(`${config.public.apiBase}/api/courses`, {
+    method: 'POST',
+    headers: { Authorization: token },
+    body: form.value
+  })
+  if (error.value) {
+    console.error('Create error:', error.value)
+    return
   }
-};
+  router.push('/profile')
+}
 </script>
