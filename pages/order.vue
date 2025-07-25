@@ -2,22 +2,33 @@
   <v-container>
     <v-row justify="center">
       <v-col cols="12" sm="8" md="6">
-        <v-card class="pa-6">
+        <v-card class="pa-6" aria-label="Заказ услуги">
           <v-card-title class="justify-center">
-            <h2>Заказ услуги</h2>
+            <h2 aria-label="Заказ услуги">Заказ услуги</h2>
           </v-card-title>
           <v-card-text>
-            <v-list>
-              <v-list-item v-for="(course, index) in courses" :key="index">
+            <v-alert v-if="errorMessage" type="error" dismissible class="mb-4" aria-label="Сообщение об ошибке">
+              {{ errorMessage }}
+            </v-alert>
+            <v-list v-if="courses.length > 0" aria-label="Список доступных курсов">
+              <v-list-item v-for="(course, index) in courses" :key="index" aria-label="Курс">
                 <v-list-item-content>
-                  <v-list-item-title>{{ course.title }} - {{ course.price }} руб.</v-list-item-title>
-                  <v-list-item-subtitle>{{ course.description }}</v-list-item-subtitle>
+                  <v-list-item-title aria-label="Название курса">{{ course.title }} - {{ course.price }} руб.</v-list-item-title>
+                  <v-list-item-subtitle aria-label="Описание курса">{{ course.description }}</v-list-item-subtitle>
                 </v-list-item-content>
                 <v-list-item-action>
-                  <v-btn color="primary" @click="orderCourse(course)">Заказать</v-btn>
+                  <v-btn 
+                    color="primary" 
+                    @click="orderCourse(course)" 
+                    v-tooltip="'Заказать курс'" 
+                    aria-label="Заказать курс"
+                  >
+                    Заказать
+                  </v-btn>
                 </v-list-item-action>
               </v-list-item>
             </v-list>
+            <p v-else aria-label="Нет доступных услуг">Нет доступных услуг</p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -34,29 +45,40 @@ const config = useRuntimeConfig()
 const router = useRouter()
 const courses = ref([])
 const token = ref(null)
+const errorMessage = ref('')
 
 onMounted(async () => {
   if (process.client) {
     token.value = localStorage.getItem('token')
   }
-  const { data } = await useFetch(`${config.public.apiBase}/api/courses`, {
-    headers: { Authorization: token.value }
+  if (!token.value) {
+    errorMessage.value = 'Требуется авторизация'
+    router.push('/login')
+    return
+  }
+  const { data, error } = await useFetch(`${config.public.apiBase}/api/courses`, {
+    headers: { Authorization: `Bearer ${token.value}` }
   })
-  courses.value = data.value
+  if (error.value) {
+    errorMessage.value = 'Ошибка загрузки услуг: ' + (error.value.data?.error || 'Неизвестная ошибка')
+    return
+  }
+  courses.value = data.value || []
 })
 
 const orderCourse = async (course) => {
-  const { data } = await useFetch(`${config.public.apiBase}/api/orders`, {
+  if (!token.value) return
+  const headers = { Authorization: `Bearer ${token.value}` }
+  const body = { course_id: course.id }
+  const { data, error } = await useFetch(`${config.public.apiBase}/api/payments/simulate`, {
     method: 'POST',
-    headers: { Authorization: token.value },
-    body: {
-      nutritionist_id: course.teacher_id,
-      course_id: course.id,
-      price: course.price
-    }
+    headers,
+    body
   })
-  // Симуляция оплаты
-  console.log("Тест оплаты прошел успешно для заказа", data.value.id, "на сумму", course.price)
-  router.push('/profile') // Перенаправление после "оплаты"
+  if (error.value) {
+    errorMessage.value = 'Ошибка заказа: ' + (error.value.data?.error || 'Неизвестная ошибка')
+    return
+  }
+  router.push(`/courses/${course.id}`)
 }
 </script>

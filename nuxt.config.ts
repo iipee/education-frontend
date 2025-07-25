@@ -10,24 +10,28 @@ export default defineNuxtConfig({
         defaultTheme: 'light',
         themes: {
           light: {
+            dark: false,
             colors: {
               primary: '#4CAF50',
-              secondary: '#2196F3',
-              accent: '#FFEB3B',
+              light: '#E8F5E9',
+              dark: '#2E7D32',
+              text: '#333',
+              bg: '#F0FDFA',
               error: '#FF5252',
-              info: '#2196F3',
               success: '#4CAF50',
-              warning: '#FFC107'
+              warning: '#FFB74D'
             }
           },
           dark: {
+            dark: true,
             colors: {
               primary: '#66BB6A',
-              secondary: '#42A5F5',
-              accent: '#FFF176',
+              light: '#1C352D',
+              dark: '#388E3C',
+              text: '#FFF',
+              bg: '#1C352D',
               error: '#FF5252',
-              info: '#42A5F5',
-              success: '#66BB6A',
+              success: '#4CAF50',
               warning: '#FFB74D'
             }
           }
@@ -40,13 +44,14 @@ export default defineNuxtConfig({
     }]
   ],
   css: ['~/assets/style.css'],
-  compatibilityDate: '2025-07-21',
+  compatibilityDate: '2025-07-24',
   runtimeConfig: {
     public: {
-      apiBase: process.env.API_BASE_URL || 'http://localhost:8080'
+      apiBase: process.env.API_BASE_URL || 'http://localhost:8080',
+      wsBase: process.env.WS_BASE_URL || 'ws://localhost:8080'
     }
   },
-  plugins: ['~/plugins/auth.ts'],
+  plugins: ['~/plugins/mitt.ts', '~/plugins/auth.ts'],
   components: true,
   vite: {
     server: {
@@ -57,6 +62,9 @@ export default defineNuxtConfig({
           rewrite: (path) => path.replace(/^\/api/, '')
         }
       }
+    },
+    ssr: {
+      noExternal: [/vuetify/]
     }
   }
 })

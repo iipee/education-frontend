@@ -1,7 +1,11 @@
 import mitt from 'mitt'
-import { defineNuxtPlugin } from 'nuxt/app'
+import { defineNuxtPlugin } from '#app'
 
-export default defineNuxtPlugin((nuxtApp: any) => {
+export default defineNuxtPlugin((nuxtApp) => {
   const emitter = mitt()
-  nuxtApp.provide('mitt', emitter)
+  return {
+    provide: {
+      emitter
+    }
+  }
 })

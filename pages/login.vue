@@ -2,12 +2,12 @@
   <v-container>
     <v-row justify="center">
       <v-col cols="12" sm="8" md="6">
-        <v-card class="pa-6">
+        <v-card class="pa-6" aria-label="Форма входа">
           <v-card-title class="justify-center">
-            <h2>Вход</h2>
+            <h2 aria-label="Вход">Вход</h2>
           </v-card-title>
           <v-card-text>
-            <v-alert v-if="errorMessage" type="error" dismissible class="mb-4">
+            <v-alert v-if="errorMessage" type="error" dismissible class="mb-4" aria-label="Сообщение об ошибке">
               {{ errorMessage }}
             </v-alert>
             <v-form v-model="valid" @submit.prevent="login">
@@ -17,14 +17,16 @@
                 prepend-icon="mdi-account"
                 :rules="[v => !!v || 'Имя обязательно']"
                 required
+                aria-label="Имя пользователя"
               />
               <v-text-field
                 v-model="form.password"
                 label="Пароль"
                 prepend-icon="mdi-lock"
                 type="password"
-                :rules="[v => !!v || 'Пароль обязателен', v => v.length >= 6 || 'Пароль должен быть не менее 6 символов']"
+                :rules="[v => !!v || 'Пароль обязателен', v => v.length >= 6 || 'Минимум 6 символов']"
                 required
+                aria-label="Пароль"
               />
               <v-btn
                 color="primary"
@@ -33,11 +35,13 @@
                 :loading="loading"
                 block
                 class="mt-4"
+                v-tooltip="'Войти в аккаунт'"
+                aria-label="Войти"
               >
                 Войти
               </v-btn>
             </v-form>
-            <p class="mt-4 text-center">Нет профиля? <NuxtLink to="/register">Создать профиль</NuxtLink></p>
+            <p class="mt-4 text-center" aria-label="Ссылка на регистрацию">Нет профиля? <NuxtLink to="/register">Зарегистрироваться</NuxtLink></p>
           </v-card-text>
         </v-card>
       </v-col>
@@ -62,21 +66,20 @@ const form = ref({
 
 const login = async () => {
   loading.value = true
-  errorMessage.value = ''
   const { data, error } = await useFetch(`${config.public.apiBase}/api/login`, {
     method: 'POST',
     body: form.value
   })
   loading.value = false
   if (error.value) {
-    errorMessage.value = error.value.data?.error || 'Неверные данные или профиль не найден'
-    console.error('Login error:', error.value)
+    errorMessage.value = error.value.data?.error || 'Неверные данные'
     return
   }
   if (process.client) {
     localStorage.setItem('token', data.value.token)
     localStorage.setItem('role', data.value.role)
+    localStorage.setItem('userId', data.value.id)
   }
-  router.push('/') // Перенаправление на главную после успеха
+  router.push('/profile')
 }
 </script>

@@ -1,5 +1,7 @@
-export default defineNuxtRouteMiddleware((to, from) => {
-    if (to.path === '/courses') {
-        return navigateTo('/');
-    }
-});
+import { defineNuxtRouteMiddleware, navigateTo } from 'nuxt/app'
+
+export default defineNuxtRouteMiddleware((to) => {
+  if (to.path === '/courses') {
+    return navigateTo('/')
+  }
+})
