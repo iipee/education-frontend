@@ -30,6 +30,7 @@
               label="Введите сообщение"
               prepend-icon="mdi-message"
               clearable
+              @input="newMessage = $event !== null ? $event : ''"
               @keyup.enter="sendMessage"
               aria-label="Поле ввода сообщения"
             />
@@ -47,11 +48,12 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRuntimeConfig } from 'nuxt/app'
 import { useRoute } from 'vue-router'
-import { inject } from 'vue'
+import { useNuxtApp } from 'nuxt/app'
 
+const { $emitter } = useNuxtApp()
+const emitter = $emitter
 const config = useRuntimeConfig()
 const route = useRoute()
-const emitter = inject('emitter')
 const receiverId = ref(route.query.receiver_id ? parseInt(route.query.receiver_id) : null)
 const newMessage = ref('')
 const messages = ref([])

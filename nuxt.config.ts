@@ -12,36 +12,38 @@ export default defineNuxtConfig({
           light: {
             dark: false,
             colors: {
-              primary: '#4CAF50',
-              light: '#E8F5E9',
-              dark: '#2E7D32',
-              text: '#333',
-              bg: '#F0FDFA',
-              error: '#FF5252',
-              success: '#4CAF50',
+              primary: '#28A745',
+              light: '#FFFFFF',
+              dark: '#218838',
+              text: '#212529',
+              bg: '#F8F9FA',
+              error: '#DC3545',
+              success: '#28A745',
               warning: '#FFB74D'
             }
           },
           dark: {
             dark: true,
             colors: {
-              primary: '#66BB6A',
-              light: '#1C352D',
-              dark: '#388E3C',
-              text: '#FFF',
-              bg: '#1C352D',
-              error: '#FF5252',
-              success: '#4CAF50',
+              primary: '#28A745',
+              light: '#212529',
+              dark: '#1A1A1A',
+              text: '#FFFFFF',
+              bg: '#212529',
+              error: '#DC3545',
+              success: '#28A745',
               warning: '#FFB74D'
             }
           }
         },
         options: {
           customProperties: true,
-          variations: true
+          variations: true,
+          ssr: true
         }
       }
-    }]
+    }],
+    '@pinia/nuxt' // Добавляем модуль Pinia
   ],
   css: ['~/assets/style.css'],
   compatibilityDate: '2025-07-24',
@@ -51,7 +53,7 @@ export default defineNuxtConfig({
       wsBase: process.env.WS_BASE_URL || 'ws://localhost:8080'
     }
   },
-  plugins: ['~/plugins/mitt.ts', '~/plugins/auth.ts'],
+  plugins: ['~/plugins/mitt.ts', '~/plugins/auth.ts', '~/plugins/websocket.js'],
   components: true,
   vite: {
     server: {
@@ -60,6 +62,10 @@ export default defineNuxtConfig({
           target: process.env.API_BASE_URL || 'http://localhost:8080',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api/, '')
+        },
+        '/ws': {
+          target: process.env.WS_BASE_URL || 'ws://localhost:8080',
+          ws: true
         }
       }
     },

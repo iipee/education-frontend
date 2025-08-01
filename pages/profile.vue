@@ -31,12 +31,6 @@
                 label="Описание услуг" 
                 aria-label="Описание услуг" 
               />
-              <v-textarea 
-                v-model="servicesStr" 
-                label="Услуги (через запятую)" 
-                aria-label="Услуги" 
-                v-if="profile.role === 'nutri'"
-              />
               <v-btn 
                 color="primary" 
                 type="submit" 
@@ -49,17 +43,11 @@
             <v-row v-else>
               <v-col cols="12">
                 <h3 aria-label="Имя пользователя">{{ profile.full_name || profile.username || 'Имя не указано' }}</h3>
-                <p v-if="profile.description" aria-label="Описание">{{ profile.description }}</p>
-                <p v-else aria-label="Описание не указано">Описание не указано</p>
               </v-col>
               <v-col cols="12" v-if="profile.role === 'nutri'">
                 <h4 aria-label="Услуги">Услуги</h4>
-                <v-list v-if="profile.services && profile.services.length > 0" aria-label="Список услуг">
-                  <v-list-item v-for="(service, index) in profile.services" :key="index" aria-label="Услуга">
-                    <v-list-item-title>{{ service }}</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-                <p v-else aria-label="Услуги не указаны">Услуги не указаны</p>
+                <p v-if="profile.description" aria-label="Описание">{{ profile.description }}</p>
+                <p v-else aria-label="Описание не указано">Описание не указано</p>
               </v-col>
               <v-col cols="12" v-if="profile.role === 'nutri'">
                 <h4 aria-label="Мои курсы">Мои курсы</h4>
@@ -100,6 +88,16 @@
               </v-col>
             </v-row>
           </v-card-text>
+          <v-btn 
+            v-if="profile.role === 'nutri' && isLoggedIn && role === 'client'" 
+            color="primary" 
+            block 
+            @click="openChat" 
+            v-tooltip="'Связаться с нутрициологом'" 
+            aria-label="Связаться с нутрициологом"
+          >
+            Связаться
+          </v-btn>
         </v-card>
       </v-col>
     </v-row>
@@ -110,7 +108,10 @@
 import { ref, onMounted, computed, watch } from 'vue'
 import { useRuntimeConfig } from 'nuxt/app'
 import { useRoute, useRouter } from 'vue-router'
+import { useNuxtApp } from 'nuxt/app'
 
+const { $emitter } = useNuxtApp()
+const emitter = $emitter
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
@@ -123,12 +124,13 @@ const token = ref(null)
 const role = ref('')
 const userId = ref(null)
 const editMode = ref(false)
-const servicesStr = ref('')
 const errorMessage = ref('')
 
 const sortedCourses = computed(() => {
   return [...courses.value].sort((a, b) => a.title.localeCompare(b.title) || a.id - b.id)
 })
+
+const isLoggedIn = computed(() => !!token.value)
 
 onMounted(async () => {
   if (process.client) {
@@ -136,12 +138,8 @@ onMounted(async () => {
     role.value = localStorage.getItem('role') || ''
     userId.value = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
   }
-  if (!token.value) {
-    errorMessage.value = 'Требуется авторизация'
-    router.push('/login')
-    return
-  }
   await loadProfile()
+  emitter.on('login', loadProfile)
 })
 
 watch(courses, () => {
@@ -149,7 +147,7 @@ watch(courses, () => {
 })
 
 const loadProfile = async () => {
-  const headers = { Authorization: `Bearer ${token.value}` }
+  const headers = token.value ? { Authorization: `Bearer ${token.value}` } : {}
   const path = otherId.value ? `/api/profile/${otherId.value}` : '/api/profile'
   const { data, error } = await useFetch(`${config.public.apiBase}${path}`, { headers })
   if (error.value) {
@@ -168,7 +166,6 @@ const loadProfile = async () => {
   }
   profile.value = data.value.profile || {}
   courses.value = data.value.courses || []
-  servicesStr.value = profile.value.services ? profile.value.services.join(', ') : ''
   const reviewPath = otherId.value ? `/api/reviews/user/${otherId.value}` : `/api/reviews/user/${userId.value}`
   const { data: reviewData, error: reviewError } = await useFetch(`${config.public.apiBase}${reviewPath}`, { headers })
   if (reviewError.value) {
@@ -186,11 +183,9 @@ const loadProfile = async () => {
 
 const updateProfile = async () => {
   const headers = { Authorization: `Bearer ${token.value}` }
-  const servicesArray = profile.value.role === 'nutri' ? servicesStr.value.split(',').map(s => s.trim()).filter(s => s) : profile.value.services
   const body = {
     full_name: profile.value.full_name,
-    description: profile.value.description,
-    services: servicesArray
+    description: profile.value.description
   }
   const { error } = await useFetch(`${config.public.apiBase}/api/profile`, { 
     method: 'PUT', 
@@ -199,9 +194,35 @@ const updateProfile = async () => {
   })
   if (!error.value) {
     editMode.value = false
-    await loadProfile()
+    await $fetch(`${config.public.apiBase}/api/profile`, { method: 'GET', headers }) // Обновление данных
+      .then(response => {
+        profile.value = response.profile || {}
+        courses.value = response.courses || []
+      })
+      .catch(err => {
+        errorMessage.value = 'Ошибка обновления данных: ' + err.message
+      })
   } else {
     errorMessage.value = 'Ошибка обновления профиля: ' + (error.value.data?.error || 'Неизвестная ошибка')
+  }
+}
+
+const openChat = async () => {
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
+  try {
+    const headers = { Authorization: `Bearer ${token.value}` }
+    const { data } = await $fetch(`${config.public.apiBase}/api/start-chat`, {
+      method: 'POST',
+      headers,
+      body: { receiver_id: profile.value.id }
+    })
+    router.push(`/chats?selected=${data.receiver_id}`)
+  } catch (error) {
+    errorMessage.value = 'Ошибка открытия чата: ' + (error.message || 'Неизвестная ошибка')
+    return
   }
 }
 </script>

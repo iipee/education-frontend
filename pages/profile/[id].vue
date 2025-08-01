@@ -13,17 +13,11 @@
             <v-row>
               <v-col cols="12">
                 <h3 aria-label="Имя пользователя">{{ profile.full_name || profile.username || 'Имя не указано' }}</h3>
-                <p v-if="profile.description" aria-label="Описание">{{ profile.description }}</p>
-                <p v-else aria-label="Описание не указано">Описание не указано</p>
               </v-col>
               <v-col cols="12" v-if="profile.role === 'nutri'">
                 <h4 aria-label="Услуги">Услуги</h4>
-                <v-list v-if="profile.services && profile.services.length > 0" aria-label="Список услуг">
-                  <v-list-item v-for="(service, index) in profile.services" :key="index" aria-label="Услуга">
-                    <v-list-item-title>{{ service }}</v-list-item-title>
-                  </v-list-item>
-                </v-list>
-                <p v-else aria-label="Услуги не указаны">Услуги не указаны</p>
+                <p v-if="profile.description" aria-label="Описание">{{ profile.description }}</p>
+                <p v-else aria-label="Описание не указано">Описание не указано</p>
               </v-col>
               <v-col cols="12" v-if="profile.role === 'nutri'">
                 <h4 aria-label="Курсы">Курсы</h4>
@@ -57,6 +51,16 @@
             >
               Связаться
             </v-btn>
+            <v-btn 
+              v-else-if="!isLoggedIn" 
+              to="/login" 
+              block 
+              class="mt-4" 
+              v-tooltip="'Войти для связи'" 
+              aria-label="Войти для связи"
+            >
+              Войти для связи
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
@@ -86,6 +90,7 @@
           <v-text-field 
             v-model="newMessage" 
             placeholder="Сообщение" 
+            @input="newMessage = $event !== null ? $event : ''"
             @keyup.enter="sendChatMessage" 
             aria-label="Введите сообщение" 
           />
@@ -109,12 +114,13 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRuntimeConfig } from 'nuxt/app'
 import { useRoute, useRouter } from 'vue-router'
-import { inject } from 'vue'
+import { useNuxtApp } from 'nuxt/app'
 
+const { $emitter } = useNuxtApp()
+const emitter = $emitter
 const config = useRuntimeConfig()
 const route = useRoute()
 const router = useRouter()
-const emitter = inject('emitter')
 const userIdParam = ref(route.params.id ? parseInt(route.params.id) : null)
 const profile = ref({})
 const courses = ref([])
@@ -138,16 +144,14 @@ onMounted(async () => {
   if (process.client) {
     token.value = localStorage.getItem('token')
     role.value = localStorage.getItem('role') || ''
-    userId.value = parseInt(localStorage.getItem('userId'))
+    userId.value = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
     isLoggedIn.value = !!token.value
   }
-  if (!token.value) {
-    router.push('/login')
-    return
-  }
   await loadProfile()
-  connectWebSocket()
-  emitter.on('message', handleNewMessage)
+  if (isLoggedIn.value) {
+    connectWebSocket()
+    emitter.on('message', handleNewMessage)
+  }
 })
 
 onUnmounted(() => {
@@ -156,7 +160,7 @@ onUnmounted(() => {
 })
 
 const loadProfile = async () => {
-  const headers = { Authorization: `Bearer ${token.value}` }
+  const headers = token.value ? { Authorization: `Bearer ${token.value}` } : {}
   const { data, error } = await useFetch(`${config.public.apiBase}/api/profile/${userIdParam.value}`, { headers })
   if (error.value) {
     errorMessage.value = 'Ошибка загрузки профиля: ' + (error.value.data?.error || 'Неизвестная ошибка')
@@ -172,6 +176,10 @@ const loadProfile = async () => {
 }
 
 const openChat = async () => {
+  if (!isLoggedIn.value) {
+    router.push('/login')
+    return
+  }
   selectedNutriName.value = profile.value.full_name || profile.value.username
   await loadChatMessages()
   dialogChat.value = true
@@ -211,16 +219,20 @@ const handleNewMessage = (msg) => {
 }
 
 const connectWebSocket = () => {
-  if (!token.value) return
-  ws.value = new WebSocket(`${config.public.wsBase}/ws?token=${token.value}`)
-  ws.value.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-    if (data.type === 'message') {
-      handleNewMessage(data.data)
+  if (!token.value || !process.client) return
+  try {
+    ws.value = new WebSocket(`${config.public.wsBase}/ws?token=${token.value}`)
+    ws.value.onmessage = (event) => {
+      const data = JSON.parse(event.data)
+      if (data.type === 'message') {
+        handleNewMessage(data.data)
+      }
     }
-  }
-  ws.value.onclose = () => {
-    setTimeout(connectWebSocket, 5000)
+    ws.value.onclose = () => {
+      setTimeout(connectWebSocket, 5000)
+    }
+  } catch (e) {
+    console.error('WebSocket error:', e)
   }
 }
 </script>

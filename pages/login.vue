@@ -53,7 +53,10 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from 'nuxt/app'
+import { useNuxtApp } from 'nuxt/app'
 
+const { $emitter } = useNuxtApp()
+const emitter = $emitter
 const config = useRuntimeConfig()
 const router = useRouter()
 const valid = ref(false)
@@ -79,6 +82,7 @@ const login = async () => {
     localStorage.setItem('token', data.value.token)
     localStorage.setItem('role', data.value.role)
     localStorage.setItem('userId', data.value.id)
+    emitter.emit('login')
   }
   router.push('/profile')
 }
