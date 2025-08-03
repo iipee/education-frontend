@@ -3,12 +3,16 @@
     <v-parallax :src="`/images/salad.jpg`" height="60vh">
       <v-row align="center" justify="center">
         <v-col class="text-center">
-          <h1 class="text-h3 font-weight-bold" style="color: #2E7D32;" aria-label="Слоган платформы">
-            Откройте персонализированное питание
-          </h1>
-          <p class="text-h5 mt-4" style="color: #212529;" aria-label="Подзаголовок">
-            Найдите идеального нутрициолога для вашего здоровья
-          </p>
+          <v-card class="pa-6 static-parallax-card" style="background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(5px); box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important; transform: none !important;">
+            <v-card-text style="color: #FFFFFF !important; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">
+              <h1 class="text-h3 font-weight-bold" aria-label="Слоган платформы">
+                Откройте персонализированное питание
+              </h1>
+              <p class="text-h5 mt-4" aria-label="Подзаголовок">
+                Найдите идеального нутрициолога для вашего здоровья
+              </p>
+            </v-card-text>
+          </v-card>
           <v-btn
             color="#28A745"
             large
@@ -39,7 +43,7 @@
             <v-col v-else v-for="nutri in recommended" :key="nutri.id" cols="12" sm="6" md="4">
               <v-card 
                 height="400" 
-                class="pa-4 d-flex flex-column" 
+                class="pa-4 d-flex flex-column nutri-card" 
                 style="width: 300px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
                 elevation="2"
                 aria-label="Карточка нутрициолога"
@@ -164,7 +168,26 @@ const onImageError = (event) => {
 </script>
 
 <style scoped>
-.v-card:hover {
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+/* Статичная рамка для параллакса с максимальной специфичностью */
+.v-parallax .static-parallax-card {
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) !important;
+  transform: none !important;
+  transition: none !important; /* Отключаем все переходы */
+  pointer-events: none !important; /* Отключаем интерактивность для исключения hover */
+}
+
+/* Анимация только для интерактивных карточек нутрициологов */
+.nutri-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+@media (max-width: 600px) {
+  .text-h3 {
+    font-size: 18px !important;
+  }
+  .text-h5 {
+    font-size: 14px !important;
+  }
 }
 </style>

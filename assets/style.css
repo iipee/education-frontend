@@ -42,6 +42,13 @@
   background-color: #43A047 !important; /* Темный вариант для тёмной темы */
 }
 
+/* Отключаем анимацию для v-card в параллаксе */
+.v-parallax .v-card {
+  transition: none !important;
+  transform: none !important;
+}
+
+/* Анимация только для интерактивных карточек (например, nutri-card) */
 .v-card {
   transition: all 0.3s;
   border-radius: 12px;
