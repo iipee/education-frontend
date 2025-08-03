@@ -3,28 +3,53 @@
     <v-row justify="center">
       <v-col cols="12" sm="8" md="6">
         <v-card class="pa-6" aria-label="Форма оплаты">
-          <v-card-title class="justify-center">
-            <h2 aria-label="Оплата заказа">Оплата заказа</h2>
-          </v-card-title>
+          <v-card-title class="justify-center text-h4" aria-label="Оплата заказа">Оплата заказа</v-card-title>
           <v-card-text>
-            <p aria-label="Сумма заказа">Сумма: {{ amount }} руб.</p>
-            <v-btn color="primary" block @click="openPaymentModal" v-tooltip="'Открыть форму оплаты'" aria-label="Открыть форму оплаты">Оплатить</v-btn>
+            <p style="font-size: 20px; color: #28A745;" aria-label="Сумма заказа">Сумма: {{ amount }} руб.</p>
+            <v-btn 
+              color="#28A745" 
+              block 
+              @click="openPaymentModal" 
+              v-tooltip="'Открыть форму оплаты'" 
+              aria-label="Открыть форму оплаты"
+            >
+              Оплатить
+            </v-btn>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
-    <v-dialog v-model="dialogPayment" max-width="400" aria-label="Диалог оплаты">
-      <v-card>
+    <v-dialog v-model="dialogPayment" max-width="500" aria-label="Диалог оплаты">
+      <v-card style="padding: 24px;">
         <v-card-title aria-label="Оплата">Оплата</v-card-title>
         <v-card-text>
           <v-form>
-            <v-text-field label="Номер карты" v-model="cardNum" :rules="[v => !!v || 'Поле обязательно']" aria-label="Номер карты" />
-            <v-text-field label="Срок действия" v-model="expiry" :rules="[v => !!v || 'Поле обязательно']" aria-label="Срок действия" />
-            <v-text-field label="CVV" v-model="cvv" type="password" :rules="[v => !!v || 'Поле обязательно']" aria-label="CVV" />
+            <v-text-field 
+              label="Номер карты" 
+              v-model="cardNum" 
+              :rules="[v => !!v || 'Поле обязательно']" 
+              style="margin-bottom: 16px;" 
+              aria-label="Номер карты" 
+            />
+            <v-text-field 
+              label="Срок действия" 
+              v-model="expiry" 
+              :rules="[v => !!v || 'Поле обязательно']" 
+              style="margin-bottom: 16px;" 
+              aria-label="Срок действия" 
+            />
+            <v-text-field 
+              label="CVV" 
+              v-model="cvv" 
+              type="password" 
+              :rules="[v => !!v || 'Поле обязательно']" 
+              style="margin-bottom: 16px;" 
+              aria-label="CVV" 
+            />
           </v-form>
         </v-card-text>
         <v-card-actions>
-          <v-btn color="primary" @click="submitPayment" v-tooltip="'Подтвердить оплату'" aria-label="Подтвердить оплату">Оплатить</v-btn>
+          <v-btn color="#28A745" @click="submitPayment" v-tooltip="'Подтвердить оплату'" aria-label="Подтвердить оплату">Оплатить</v-btn>
           <v-btn text @click="dialogPayment = false" aria-label="Отмена">Отмена</v-btn>
         </v-card-actions>
       </v-card>
@@ -46,6 +71,7 @@ const router = useRouter()
 const orderId = ref(route.query.order_id ? parseInt(route.query.order_id) : null)
 const amount = ref(route.query.amount ? parseFloat(route.query.amount) : 0)
 const token = ref(null)
+const userId = ref(null)
 const dialogPayment = ref(false)
 const cardNum = ref('')
 const expiry = ref('')
@@ -57,6 +83,7 @@ const snackbarColor = ref('success')
 onMounted(() => {
   if (process.client) {
     token.value = localStorage.getItem('token')
+    userId.value = localStorage.getItem('userId') ? parseInt(localStorage.getItem('userId')) : null
     if (!token.value) {
       router.push('/login')
     }
@@ -74,23 +101,40 @@ const submitPayment = async () => {
     snackbar.value = true
     return
   }
-  const headers = { Authorization: `Bearer ${token.value}` }
-  const body = { course_id: orderId.value }
-  const { data, error } = await useFetch(`${config.public.apiBase}/api/payments/simulate`, { 
-    method: 'POST', 
-    headers, 
-    body 
-  })
-  dialogPayment.value = false
-  if (!error.value) {
-    snackbarText.value = `Оплата успешна! ID: ${data.value.transaction_id}`
+  try {
+    const headers = { Authorization: `Bearer ${token.value}` }
+    const body = { 
+      course_id: orderId.value, 
+      user_id: userId.value, 
+      amount: amount.value 
+    }
+    const { data, error } = await useFetch(`${config.public.apiBase}/api/payments/simulate`, { 
+      method: 'POST', 
+      headers, 
+      body 
+    })
+    if (error.value) {
+      throw new Error(error.value.data?.error || 'Неизвестная ошибка')
+    }
+    snackbarText.value = data.value.transaction_id ? `Оплата успешна! ID: ${data.value.transaction_id}` : 'Оплата успешна!'
     snackbarColor.value = 'success'
     snackbar.value = true
     setTimeout(() => router.push('/profile'), 2000)
-  } else {
-    snackbarText.value = 'Ошибка оплаты: ' + (error.value.data?.error || 'Неизвестная ошибка')
+  } catch (error) {
+    snackbarText.value = 'Ошибка оплаты: ' + (error.message || 'Неизвестная ошибка')
     snackbarColor.value = 'error'
     snackbar.value = true
+  } finally {
+    dialogPayment.value = false
+    cardNum.value = ''
+    expiry.value = ''
+    cvv.value = ''
   }
 }
 </script>
+
+<style scoped>
+.v-btn {
+  border-radius: 8px;
+}
+</style>

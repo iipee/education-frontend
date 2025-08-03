@@ -5,7 +5,7 @@
     </v-toolbar-title>
     <v-spacer />
     <v-btn icon to="/search" aria-label="Поиск курсов">
-      <v-icon color="#28A745">mdi-magnify</v-icon>
+      <v-icon :color="themeStore.theme === 'dark' ? '#A5D6A7' : '#28A745'">mdi-magnify</v-icon>
     </v-btn>
     <v-btn text to="/" aria-label="Перейти на главную страницу">Главная</v-btn>
     <v-btn 
@@ -47,18 +47,18 @@
       aria-label="Чат"
     >
       <v-badge :content="chatStore.unreadCount" color="error" overlap v-if="chatStore.unreadCount > 0">
-        <v-icon color="#28A745">mdi-message-text</v-icon>
+        <v-icon :color="themeStore.theme === 'dark' ? '#A5D6A7' : '#28A745'">mdi-message-text</v-icon>
       </v-badge>
-      <v-icon color="#28A745" v-else>mdi-message-text</v-icon>
+      <v-icon :color="themeStore.theme === 'dark' ? '#A5D6A7' : '#28A745'" v-else>mdi-message-text</v-icon>
     </v-btn>
     <v-btn 
       icon 
-      @click="toggleTheme" 
+      @click="themeStore.toggleTheme" 
       style="margin-left: 16px;" 
       aria-label="Переключить тему"
     >
-      <v-icon size="24" :color="$vuetify.theme.global.name === 'dark' ? '#FFB300' : '#3949AB'">
-        {{ $vuetify.theme.global.name === 'dark' ? 'mdi-white-balance-sunny' : 'mdi-moon-waxing-crescent' }}
+      <v-icon size="24" :color="themeStore.theme === 'dark' ? '#FFB300' : '#343A40'">
+        {{ themeStore.theme === 'dark' ? 'mdi-white-balance-sunny' : 'mdi-moon-waxing-crescent' }}
       </v-icon>
     </v-btn>
   </v-app-bar>
@@ -69,10 +69,12 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNuxtApp } from 'nuxt/app'
 import { useChatStore } from '~/stores/chat'
+import { useThemeStore } from '~/stores/theme'
 
-const { $vuetify, $emitter, $websocket } = useNuxtApp()
+const { $emitter, $websocket } = useNuxtApp()
 const router = useRouter()
 const chatStore = useChatStore()
+const themeStore = useThemeStore()
 const token = ref(null)
 const role = ref('')
 
@@ -82,8 +84,6 @@ onMounted(() => {
   if (process.client) {
     token.value = localStorage.getItem('token')
     role.value = localStorage.getItem('role') || ''
-    const savedTheme = localStorage.getItem('theme') || 'light'
-    $vuetify.theme.global.name = savedTheme
     if (isLoggedIn.value) {
       chatStore.fetchDialogs()
     }
@@ -98,15 +98,6 @@ onMounted(() => {
     })
   }
 })
-
-const toggleTheme = () => {
-  const newTheme = $vuetify.theme.global.name === 'light' ? 'dark' : 'light'
-  $vuetify.theme.global.name = newTheme
-  if (process.client) {
-    localStorage.setItem('theme', newTheme)
-    document.documentElement.setAttribute('data-theme', newTheme)
-  }
-}
 
 const logout = () => {
   if (process.client) {

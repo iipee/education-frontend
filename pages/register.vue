@@ -2,126 +2,120 @@
   <v-container>
     <v-row justify="center">
       <v-col cols="12" sm="8" md="6">
-        <v-card class="pa-6" aria-label="Форма регистрации">
-          <v-card-title class="justify-center">
-            <h2 aria-label="Регистрация">Регистрация</h2>
-          </v-card-title>
+        <v-card class="pa-6" aria-label="Регистрация">
+          <v-card-title class="justify-center" aria-label="Регистрация">Регистрация</v-card-title>
           <v-card-text>
             <v-alert v-if="errorMessage" type="error" dismissible class="mb-4" aria-label="Сообщение об ошибке">
               {{ errorMessage }}
             </v-alert>
-            <v-form v-model="valid" @submit.prevent="register">
-              <v-text-field
-                v-model="form.username"
-                label="Имя пользователя"
-                prepend-icon="mdi-account"
-                :rules="[v => !!v || 'Имя обязательно']"
-                required
-                aria-label="Имя пользователя"
+            <v-form @submit.prevent="submitRegistration">
+              <v-text-field 
+                v-model="username" 
+                label="Логин" 
+                :rules="[v => !!v || 'Логин обязательно']" 
+                aria-label="Логин" 
               />
-              <v-text-field
-                v-model="form.email"
-                label="Email"
-                prepend-icon="mdi-email"
-                :rules="[v => !!v || 'Email обязателен', v => /.+@.+\..+/.test(v) || 'Некорректный email']"
-                required
-                aria-label="Email"
+              <v-text-field 
+                v-model="email" 
+                label="Email" 
+                :rules="[v => !!v || 'Email обязательно', v => /.+@.+\..+/.test(v) || 'Неверный email']" 
+                aria-label="Email" 
               />
-              <v-text-field
-                v-model="form.full_name"
-                label="Полное имя"
-                prepend-icon="mdi-account-details"
-                :rules="[v => !!v || 'Полное имя обязательно']"
-                required
-                aria-label="Полное имя"
+              <v-text-field 
+                v-model="password" 
+                label="Пароль" 
+                type="password" 
+                :rules="[v => !!v || 'Пароль обязательно', v => v.length >= 8 || 'Минимум 8 символов']" 
+                aria-label="Пароль" 
               />
-              <v-text-field
-                v-model="form.password"
-                label="Пароль"
-                prepend-icon="mdi-lock"
-                type="password"
-                :rules="[v => !!v || 'Пароль обязателен', v => v.length >= 6 || 'Минимум 6 символов']"
-                required
-                aria-label="Пароль"
+              <v-select 
+                v-model="role" 
+                :items="roles" 
+                label="Роль" 
+                :rules="[v => !!v || 'Роль обязательна']" 
+                aria-label="Роль" 
               />
-              <v-select
-                v-model="form.role"
-                :items="roles"
-                label="Роль"
-                prepend-icon="mdi-account-group"
-                :rules="[v => !!v || 'Роль обязательна']"
-                required
-                aria-label="Роль"
+              <v-textarea 
+                v-model="description" 
+                label="Описание услуг" 
+                v-if="role === 'nutri'" 
+                :rules="[v => !!v || 'Описание обязательно для нутрициолога']" 
+                aria-label="Описание услуг" 
               />
-              <v-textarea
-                v-if="form.role === 'nutri'"
-                v-model="form.description"
-                label="Описание услуг"
-                prepend-icon="mdi-information"
-                :rules="[v => !!v || 'Описание обязательно для нутрициолога']"
-                required
-                aria-label="Описание услуг"
-              />
-              <v-btn
-                color="primary"
-                type="submit"
-                :disabled="!valid"
-                block
-                class="mt-4"
-                v-tooltip="'Зарегистрироваться'"
+              <v-btn 
+                color="primary" 
+                type="submit" 
+                v-tooltip="'Зарегистрироваться'" 
                 aria-label="Зарегистрироваться"
               >
                 Зарегистрироваться
               </v-btn>
             </v-form>
-            <p class="mt-4 text-center" aria-label="Ссылка на вход">Нет профиля? <NuxtLink to="/login">Войти</NuxtLink></p>
           </v-card-text>
         </v-card>
       </v-col>
     </v-row>
+    <v-snackbar v-model="snackbar" :color="snackbarColor" timeout="3000" aria-label="Уведомление о результате">
+      {{ snackbarText }}
+    </v-snackbar>
   </v-container>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 import { useRuntimeConfig } from 'nuxt/app'
-import { useNuxtApp } from 'nuxt/app'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '~/stores/auth'
 
-const { $emitter } = useNuxtApp()
-const emitter = $emitter
 const config = useRuntimeConfig()
 const router = useRouter()
-const valid = ref(false)
+const authStore = useAuthStore()
+const username = ref('')
+const email = ref('')
+const password = ref('')
+const role = ref('')
+const description = ref('')
+const roles = ref(['client', 'nutri'])
 const errorMessage = ref('')
-const form = ref({
-  username: '',
-  email: '',
-  full_name: '',
-  password: '',
-  role: '',
-  description: ''
-})
-const roles = [
-  { value: 'client', title: 'Клиент' },
-  { value: 'nutri', title: 'Нутрициолог' }
-]
+const snackbar = ref(false)
+const snackbarText = ref('')
+const snackbarColor = ref('success')
 
-const register = async () => {
-  const { data, error } = await useFetch(`${config.public.apiBase}/api/register`, {
-    method: 'POST',
-    body: form.value
-  })
-  if (error.value) {
-    errorMessage.value = error.value.data?.error || 'Ошибка регистрации'
-    return
+const submitRegistration = async () => {
+  const body = {
+    username,
+    email,
+    password,
+    role: role.value,
+    description: role.value === 'nutri' ? description.value : ''
   }
-  if (process.client) {
-    localStorage.setItem('token', data.value.token)
-    localStorage.setItem('role', form.value.role)
-    localStorage.setItem('userId', data.value.id)
-    emitter.emit('login')
+  try {
+    const { token, role: userRole, id } = await $fetch(`${config.public.apiBase}/api/register`, {
+      method: 'POST',
+      body
+    })
+    if (process.client) {
+      localStorage.setItem('token', token)
+      localStorage.setItem('role', userRole)
+      localStorage.setItem('userId', id)
+    }
+    authStore.setUser(token, userRole, id)
+    snackbarText.value = 'Регистрация прошла успешно'
+    snackbarColor.value = 'success'
+    snackbar.value = true
+    router.push('/')
+  } catch (error) {
+    snackbarText.value = 'Ошибка регистрации: ' + (error.message || 'Неизвестная ошибка')
+    snackbarColor.value = 'error'
+    snackbar.value = true
   }
-  router.push('/profile')
 }
 </script>
+
+<style scoped>
+.v-card {
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+</style>

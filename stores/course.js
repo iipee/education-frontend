@@ -8,7 +8,7 @@ export const useCourseStore = defineStore('course', {
     isPaid: false,
     canReview: false,
     transactionId: null,
-    loading: false,
+    loading: true,
     error: null
   }),
   actions: {
@@ -17,11 +17,12 @@ export const useCourseStore = defineStore('course', {
       const config = useRuntimeConfig()
       const headers = process.client && localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}
       try {
-        const { data } = await $fetch(`${config.public.apiBase}/api/courses/${id}`, { headers })
+        const data = await $fetch(`${config.public.apiBase}/api/courses/${id}`, { headers })
         this.course = data || {}
         await this.loadReviews(id)
       } catch (error) {
         this.error = error.message || 'Неизвестная ошибка'
+        this.course = {}
         throw error
       } finally {
         this.loading = false
@@ -31,7 +32,7 @@ export const useCourseStore = defineStore('course', {
       const config = useRuntimeConfig()
       const headers = process.client && localStorage.getItem('token') ? { Authorization: `Bearer ${localStorage.getItem('token')}` } : {}
       try {
-        const { data } = await $fetch(`${config.public.apiBase}/api/reviews/course/${id}`, { headers })
+        const data = await $fetch(`${config.public.apiBase}/api/reviews/course/${id}`, { headers })
         this.reviews = data || []
       } catch (error) {
         this.error = error.message || 'Неизвестная ошибка'
@@ -39,23 +40,29 @@ export const useCourseStore = defineStore('course', {
       }
     },
     async checkCanReview(userId) {
+      if (!localStorage.getItem('token')) {
+        this.isPaid = false
+        this.canReview = false
+        return
+      }
       const config = useRuntimeConfig()
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
       try {
-        const { data } = await $fetch(`${config.public.apiBase}/api/payments`, { headers })
-        this.isPaid = data.some(p => p.course_id === parseInt(this.course.id) && p.status === 'success')
+        const data = await $fetch(`${config.public.apiBase}/api/payments`, { headers })
+        this.isPaid = data && Array.isArray(data) ? data.some(p => p.course_id === parseInt(this.course.id) && p.status === 'success') : false
         this.canReview = this.isPaid
       } catch (error) {
         this.error = error.message || 'Неизвестная ошибка'
-        throw error
+        this.isPaid = false
+        this.canReview = false
       }
     },
     async submitPayment(courseId, userId) {
       const config = useRuntimeConfig()
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      const body = { course_id: parseInt(courseId) }
+      const body = { course_id: parseInt(courseId), user_id: userId, amount: this.course.price }
       try {
-        const { data } = await $fetch(`${config.public.apiBase}/api/payments/simulate`, { method: 'POST', headers, body })
+        const data = await $fetch(`${config.public.apiBase}/api/payments/simulate`, { method: 'POST', headers, body })
         this.transactionId = data.transaction_id
         this.isPaid = true
         this.canReview = true
@@ -67,9 +74,9 @@ export const useCourseStore = defineStore('course', {
     async submitReview(courseId, content, userId) {
       const config = useRuntimeConfig()
       const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      const body = { course_id: parseInt(courseId), content }
+      const body = { course_id: parseInt(courseId), content, author_id: userId }
       try {
-        const { data } = await $fetch(`${config.public.apiBase}/api/reviews`, { method: 'POST', headers, body })
+        const data = await $fetch(`${config.public.apiBase}/api/reviews`, { method: 'POST', headers, body })
         this.reviews.push(data)
       } catch (error) {
         this.error = error.message || 'Неизвестная ошибка'
@@ -77,7 +84,7 @@ export const useCourseStore = defineStore('course', {
       }
     },
     handleNewMessage(msg) {
-      // Реализация обработки новых сообщений (если нужно для чата)
+      // Placeholder for WebSocket message handling if needed
     }
   }
 })

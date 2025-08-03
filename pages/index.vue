@@ -6,12 +6,15 @@
           <h1 class="text-h3 font-weight-bold" style="color: #2E7D32;" aria-label="Слоган платформы">
             Откройте персонализированное питание
           </h1>
-          <p class="text-h5 mt-4" aria-label="Подзаголовок">Найдите идеального нутрициолога для вашего здоровья</p>
+          <p class="text-h5 mt-4" style="color: #212529;" aria-label="Подзаголовок">
+            Найдите идеального нутрициолога для вашего здоровья
+          </p>
           <v-btn
-            color="primary"
+            color="#28A745"
             large
             to="/search"
             class="mt-6"
+            style="border-radius: 8px;"
             v-tooltip="'Перейти к поиску курсов'"
             aria-label="Поиск курсов"
           >
@@ -23,30 +26,55 @@
     <v-container>
       <v-row class="mt-12">
         <v-col cols="12">
-          <h2 class="text-h4 text-center mb-8" aria-label="Рекомендуемые нутрициологи">Рекомендуемые нутрициологи</h2>
+          <h2 class="text-h4 text-center mb-8" style="color: #2E7D32;" aria-label="Рекомендуемые нутрициологи">
+            Рекомендуемые нутрициологи
+          </h2>
           <v-row>
-            <v-col v-if="loading" v-for="n in 3" :key="n" cols="12" sm="6" md="4">
+            <v-col v-if="loading" v-for="n in 6" :key="n" cols="12" sm="6" md="4">
               <v-skeleton-loader type="card" aria-label="Загрузка карточки" />
             </v-col>
             <v-col v-else-if="recommended.length === 0" cols="12">
-              <p class="text-center" aria-label="Нет рекомендаций">Нет доступных нутрициологов</p>
+              <p class="text-center" style="font-size: 16px;" aria-label="Нет рекомендаций">Нет доступных нутрициологов</p>
             </v-col>
-            <v-col v-else v-for="(nutri, index) in recommended" :key="index" cols="12" sm="6" md="4">
-              <v-card height="400" class="pa-4 d-flex flex-column" aria-label="Карточка нутрициолога">
+            <v-col v-else v-for="nutri in recommended" :key="nutri.id" cols="12" sm="6" md="4">
+              <v-card 
+                height="400" 
+                class="pa-4 d-flex flex-column" 
+                style="width: 300px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"
+                elevation="2"
+                aria-label="Карточка нутрициолога"
+              >
                 <v-img
                   src="/images/nutri-placeholder.jpg"
-                  height="200"
-                  class="rounded-circle mx-auto"
+                  width="150"
+                  height="150"
+                  class="mx-auto rounded-circle"
                   aria-label="Фото нутрициолога"
-                />
-                <v-card-title class="justify-center" aria-label="Имя нутрициолога">{{ nutri.full_name || 'Не указано' }}</v-card-title>
-                <v-card-text class="flex-grow-1" style="min-height: 100px;" aria-label="Описание нутрициолога">
+                  @error="onImageError"
+                >
+                  <template v-slot:placeholder>
+                    <v-icon size="150" color="#CED4DA">mdi-account-circle</v-icon>
+                  </template>
+                </v-img>
+                <v-card-title 
+                  class="justify-center text-h6" 
+                  style="font-size: 24px; color: #212529;" 
+                  aria-label="Имя нутрициолога"
+                >
+                  {{ nutri.full_name || 'Не указано' }}
+                </v-card-title>
+                <v-card-text 
+                  class="flex-grow-1" 
+                  style="min-height: 100px; font-size: 16px; line-height: 1.5;" 
+                  aria-label="Описание нутрициолога"
+                >
                   {{ nutri.description ? nutri.description.slice(0, 100) + '...' : 'Описание не указано' }}
                 </v-card-text>
                 <v-card-actions class="justify-center">
                   <v-btn
-                    color="primary"
-                    :to="`/profile/${nutri.id}`"
+                    color="#28A745"
+                    :to="`/nutri/${nutri.id}`"
+                    style="border-radius: 8px;"
                     v-tooltip="'Просмотреть профиль'"
                     aria-label="Просмотреть профиль"
                   >
@@ -60,14 +88,18 @@
       </v-row>
       <v-row class="mt-12">
         <v-col cols="12">
-          <h2 class="text-h4 text-center mb-8" aria-label="Отзывы">Отзывы</h2>
+          <h2 class="text-h4 text-center mb-8" style="color: #2E7D32;" aria-label="Отзывы">Отзывы</h2>
           <v-carousel height="300" hide-delimiter-background show-arrows-on-hover>
-            <v-carousel-item v-for="(review, index) in reviews" :key="index" aria-label="Отзыв">
+            <v-carousel-item v-for="review in reviews" :key="review.id" aria-label="Отзыв">
               <v-sheet height="100%" tile>
                 <v-row class="fill-height" align="center" justify="center">
                   <v-col cols="8">
-                    <p class="text-center text-h6" aria-label="Содержание отзыва">"{{ review.content }}"</p>
-                    <p class="text-center mt-4" aria-label="Автор отзыва">- Пользователь #{{ review.author_id }}</p>
+                    <p class="text-center text-h6" style="font-size: 18px; line-height: 1.5;" aria-label="Содержание отзыва">
+                      "{{ review.content }}"
+                    </p>
+                    <p class="text-center mt-4" style="font-size: 16px; color: #6C757D;" aria-label="Автор отзыва">
+                      - Пользователь #{{ review.author_id }}
+                    </p>
                   </v-col>
                 </v-row>
               </v-sheet>
@@ -83,9 +115,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRuntimeConfig } from 'nuxt/app'
-import { nextTick } from 'vue'
 
 const config = useRuntimeConfig()
 const recommended = ref([])
@@ -95,31 +126,45 @@ const snackbar = ref(false)
 const errorMessage = ref('')
 
 onMounted(async () => {
+  loading.value = true
   try {
-    const { data } = await useFetch(`${config.public.apiBase}/api/nutris?limit=4&random=true`)
-    console.log('API response:', data)
-    recommended.value = data.value || []
+    const nutrisData = await $fetch(`${config.public.apiBase}/api/nutris?limit=6&random=true`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    recommended.value = nutrisData || []
     if (!recommended.value.length) {
-      console.warn('No nutris returned from API')
+      errorMessage.value = 'Нет доступных нутрициологов'
+      snackbar.value = true
     }
-    const { data: reviewData } = await useFetch(`${config.public.apiBase}/api/reviews/random`)
-    reviews.value = reviewData.value || []
+    const reviewData = await $fetch(`${config.public.apiBase}/api/reviews/random`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    reviews.value = reviewData || []
   } catch (error) {
     errorMessage.value = 'Ошибка загрузки данных: ' + (error.message || 'Неизвестная ошибка')
     snackbar.value = true
-    console.error('Fetch error:', error)
+    if (error.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
+      localStorage.removeItem('userId')
+    }
   } finally {
     loading.value = false
   }
 })
 
-watch(recommended, () => {
-  nextTick(() => {
-    loading.value = false
-  })
-})
-
 definePageMeta({
   layout: 'default'
 })
+
+const onImageError = (event) => {
+  event.target.src = `/images/nutri-placeholder.jpg`
+  event.target.onerror = null
+}
 </script>
+
+<style scoped>
+.v-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>

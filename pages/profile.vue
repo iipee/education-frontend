@@ -142,42 +142,33 @@ onMounted(async () => {
   emitter.on('login', loadProfile)
 })
 
-watch(courses, () => {
-  loadProfile()
+watch(() => route.params.id, async (newId) => {
+  otherId.value = newId || null
+  await loadProfile()
 })
 
 const loadProfile = async () => {
   const headers = token.value ? { Authorization: `Bearer ${token.value}` } : {}
   const path = otherId.value ? `/api/profile/${otherId.value}` : '/api/profile'
-  const { data, error } = await useFetch(`${config.public.apiBase}${path}`, { headers })
-  if (error.value) {
-    errorMessage.value = 'Ошибка загрузки профиля: ' + (error.value.data?.error || 'Неизвестная ошибка')
-    if (error.value.statusCode === 401) {
+  try {
+    const data = await $fetch(`${config.public.apiBase}${path}`, { headers })
+    profile.value = data.profile || {}
+    courses.value = data.courses || []
+    const reviewPath = otherId.value ? `/api/reviews/user/${otherId.value}` : `/api/reviews/user/${userId.value}`
+    const reviewData = await $fetch(`${config.public.apiBase}${reviewPath}`, { headers })
+    reviews.value = reviewData || []
+    if (!otherId.value && role.value === 'client') {
+      const enrolledData = await $fetch(`${config.public.apiBase}/api/enrolled`, { headers })
+      enrolled.value = enrolledData || []
+    }
+  } catch (error) {
+    errorMessage.value = 'Ошибка загрузки профиля: ' + (error.message || 'Неизвестная ошибка')
+    if (error.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('role')
       localStorage.removeItem('userId')
       router.push('/login')
     }
-    return
-  }
-  if (!data.value) {
-    errorMessage.value = 'Ошибка: данные профиля не получены'
-    return
-  }
-  profile.value = data.value.profile || {}
-  courses.value = data.value.courses || []
-  const reviewPath = otherId.value ? `/api/reviews/user/${otherId.value}` : `/api/reviews/user/${userId.value}`
-  const { data: reviewData, error: reviewError } = await useFetch(`${config.public.apiBase}${reviewPath}`, { headers })
-  if (reviewError.value) {
-    errorMessage.value += ' Ошибка загрузки отзывов: ' + (reviewError.value.data?.error || 'Неизвестная ошибка')
-  }
-  reviews.value = reviewData.value || []
-  if (!otherId.value && role.value === 'client') {
-    const { data: enrolledData, error: enrolledError } = await useFetch(`${config.public.apiBase}/api/enrolled`, { headers })
-    if (enrolledError.value) {
-      errorMessage.value += ' Ошибка загрузки курсов: ' + (enrolledError.value.data?.error || 'Неизвестная ошибка')
-    }
-    enrolled.value = enrolledData.value || []
   }
 }
 
@@ -187,23 +178,16 @@ const updateProfile = async () => {
     full_name: profile.value.full_name,
     description: profile.value.description
   }
-  const { error } = await useFetch(`${config.public.apiBase}/api/profile`, { 
-    method: 'PUT', 
-    headers, 
-    body 
-  })
-  if (!error.value) {
+  try {
+    await $fetch(`${config.public.apiBase}/api/profile`, { 
+      method: 'PUT', 
+      headers, 
+      body 
+    })
     editMode.value = false
-    await $fetch(`${config.public.apiBase}/api/profile`, { method: 'GET', headers }) // Обновление данных
-      .then(response => {
-        profile.value = response.profile || {}
-        courses.value = response.courses || []
-      })
-      .catch(err => {
-        errorMessage.value = 'Ошибка обновления данных: ' + err.message
-      })
-  } else {
-    errorMessage.value = 'Ошибка обновления профиля: ' + (error.value.data?.error || 'Неизвестная ошибка')
+    await loadProfile()
+  } catch (error) {
+    errorMessage.value = 'Ошибка обновления профиля: ' + (error.message || 'Неизвестная ошибка')
   }
 }
 
@@ -214,7 +198,7 @@ const openChat = async () => {
   }
   try {
     const headers = { Authorization: `Bearer ${token.value}` }
-    const { data } = await $fetch(`${config.public.apiBase}/api/start-chat`, {
+    const data = await $fetch(`${config.public.apiBase}/api/start-chat`, {
       method: 'POST',
       headers,
       body: { receiver_id: profile.value.id }
@@ -222,7 +206,6 @@ const openChat = async () => {
     router.push(`/chats?selected=${data.receiver_id}`)
   } catch (error) {
     errorMessage.value = 'Ошибка открытия чата: ' + (error.message || 'Неизвестная ошибка')
-    return
   }
 }
 </script>
